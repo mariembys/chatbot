@@ -1,10 +1,22 @@
 import streamlit as st
+import os
+# Importation des utilitaires LLM (Gemini) depuis le module
+from rag_core import llm_utils 
+
+# --- Les futures imports pour le RAG (db_manager) viendront ici ---
+# from rag_core import db_manager 
 
 def main():
+    """
+    Fonction principale de l'application Streamlit.
+    Gère l'interface utilisateur et le flux de traitement de la requête.
+    """
+    
     # 1. Configuration de la page
     st.set_page_config(
         page_title="Agent Commercial de Voyage IA - RAG",
-        page_icon="🤖"
+        page_icon="🤖",
+        layout="wide" # Utilise toute la largeur de l'écran
     )
 
     st.title("✈️ Votre Agent Commercial de Voyage IA Multilingue")
@@ -14,32 +26,40 @@ def main():
     st.divider()
 
     # 2. Zone de Saisie de la Requête Client
-    # Cette variable `requete_client` contiendra l'input de l'utilisateur
     requete_client = st.text_area(
         "Entrez votre requête ici :",
         height=150,
         placeholder="Ex: نحب نسافر لتونس في الصيف. | I want to book a flight to Paris. | Je cherche des infos sur la visa pour Dubaï."
     )
 
-    # 3. Bouton de Soumission
+    # 3. Bouton de Soumission et Déclenchement du Pipeline
     if st.button("Chercher l'Information", type="primary"):
-        if requete_client:
-            # L'étape suivante (2. Traitement Multilingue) se fera ici
-            
-            # --- ÉTAPE 2 : Début du Traitement ---
-            # Nous affichons d'abord l'input pour confirmation.
-            st.info(f"Requête reçue (langue inconnue) : **{requete_client}**")
-            
-            # Appel à la fonction de traitement PNL / RAG (à créer)
-            
-            # **TO DO (À venir) :** intégrer les étapes XLM-RoBERTa et Gemini ici
-            
-            # Placeholder pour le résultat final
-            # st.success("Réponse de l'IA (en attente d'intégration du RAG) : ...")
-
-        else:
+        
+        # Vérification de l'input
+        if not requete_client:
             st.warning("Veuillez entrer une requête pour commencer.")
+            return # Arrêter l'exécution si la requête est vide
+            
+        # --- ÉTAPE 1 : Préparation ---
+        st.info(f"Requête initiale : **{requete_client}**")
+        
+        # Initialisation du client Gemini (la fonction vérifie la clé API)
+        gemini_client = llm_utils.get_gemini_client()
+        
+        st.divider()
+        
+        # --- ÉTAPE 2 : Traitement Multilingue et Normalisation ---
+        with st.spinner("⏳ Étape 2: Traduction et normalisation de la requête (Gemini)..."):
+            requete_normalisee = llm_utils.traiter_requete_multilingue(
+                gemini_client, requete_client
+            )
 
+        if requete_normalisee:
+            st.success("✅ ÉTAPE 2 RÉUSSIE : Requête normalisée (en Français) :")
+            st.code(requete_normalisee, language='text')
+
+            
+            
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,14 @@
+# Fichier .gitignore
+# ------------------
+
+# Clés API et secrets
+.env
+# Fichier cache de Streamlit (utile pour ne pas versionner des fichiers volumineux)
+.streamlit/
+# Dossiers créés par Python
+__pycache__/
+# Environnements virtuels
+venv/
+.venv/
+# Fichiers de cache de PyTorch / Hugging Face (si vous téléchargez des modèles)
+.cache/
