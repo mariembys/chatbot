@@ -12,3 +12,7 @@ venv/
 .venv/
 # Fichiers de cache de PyTorch / Hugging Face (si vous téléchargez des modèles)
 .cache/
+#le fichier du data 
+data/
+# Base vectorielle ChromaDB
+vectorstore/

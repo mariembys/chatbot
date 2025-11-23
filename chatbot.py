@@ -1,10 +1,13 @@
 import streamlit as st
 import os
+from dotenv import load_dotenv
+# Charger les variables d'environnement
+load_dotenv()
 # Importation des utilitaires LLM (Gemini) depuis le module
 from rag_core import llm_utils 
 
 # --- Les futures imports pour le RAG (db_manager) viendront ici ---
-# from rag_core import db_manager 
+from rag_core import db_manager 
 
 def main():
     """
@@ -23,7 +26,37 @@ def main():
     st.markdown("""
     Bienvenue ! Posez votre question concernant les voyages, en **Français**, en **Anglais**, en **Arabe** ou en **Dialecte Tunisien** (Derja).
     """)
+
+# --- SIDEBAR : Configuration ---
+    with st.sidebar:
+        st.header("⚙️ Configuration du Système")
+        
+        st.markdown("### 📊 Étape 3 : Préparer le Dataset")
+        st.info("""
+        Chargez vos documents de voyage depuis le dossier `data/` 
+        et créez la base vectorielle ChromaDB.
+        
+        ⏱️ Première exécution : peut prendre 5-10 minutes 
+        (téléchargement du modèle LaBSE ~500 MB)
+        """)
+        
+        # BOUTON POUR LANCER L'ÉTAPE 3
+        if st.button("🚀 Préparer le Dataset", type="primary", use_container_width=True):
+            db_manager.pipeline_complet_preparation_dataset()
+
+
+
+
     st.divider()
+# Afficher l'état de la base vectorielle
+    st.markdown("### 📈 État du Système")
+    if os.path.exists("vectorstore/chroma_db"):
+        st.success("✅ Base vectorielle créée")
+    else:
+        st.warning("⚠️ Base non créée")
+    st.divider()
+
+
 
     # 2. Zone de Saisie de la Requête Client
     requete_client = st.text_area(
