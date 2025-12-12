@@ -78,12 +78,17 @@ def load_csv_document() -> List[Document]:
         return []
 
 # --- Fonctions de Vectorisation ---
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
 def get_multilingual_embeddings():
-    """Charge le modèle d'embeddings LaBSE."""
-    return HuggingFaceBgeEmbeddings(
+    """Charge correctement LaBSE sans erreur meta-tensor."""
+    return HuggingFaceEmbeddings(
         model_name=EMBEDDING_MODEL_NAME,
-        model_kwargs={'device': 'cpu'} 
+        model_kwargs={
+            "device": "cpu",             # Évite le .to(meta)
+            "trust_remote_code": True    # Au cas où le modèle en a besoin
+        },
+        encode_kwargs={"normalize_embeddings": True}
     )
 
 def create_vector_store(documents: List[Document]):

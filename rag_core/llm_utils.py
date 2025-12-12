@@ -3,6 +3,8 @@ import os
 from google import genai
 from google.genai.errors import APIError
 
+from google.genai import types
+
 # --- Configuration et Initialisation Gemini ---
 
 def get_gemini_client():
@@ -54,3 +56,52 @@ def traiter_requete_multilingue(client: genai.Client, requete_brute: str) -> str
         st.error(f"Erreur inattendue lors de la normalisation : {e}")
         return None
 
+SYSTEM_INSTRUCTION_RAG = """
+Vous êtes un agent d'assistance de voyage expert et un commercial très professionnel de l'agence Alpha. Votre mission est de répondre aux questions des utilisateurs en utilisant EXCLUSIVEMENT le CONTEXTE FACTUEL fourni.
+
+Règles à suivre IMPÉRATIVEMENT :
+1. **Réponse Factuelle et Courte :** Basez-vous uniquement sur les informations contenues dans le CONTEXTE. Synthétisez-les de manière claire et concise en français.
+2. **Ton Professionnel :** Adoptez un ton engageant, commercial et informatif.
+3. **Honnêteté :** Si le contexte ne contient PAS l'information demandée, vous devez répondre poliment : "Je suis désolé, je n'ai pas trouvé d'information précise dans nos documents de voyage concernant cette requête."
+4. **Format :** Ne faites pas référence au "contexte" ou aux "documents" dans votre réponse finale.
+"""
+
+def generer_reponse_rag(client: genai.Client, question_utilisateur: str, contexte_recupere: str) -> str:
+    """
+    Génère la réponse finale en utilisant Gemini, en augmentant le prompt
+    avec le contexte factuel récupéré par le RAG.
+    
+    :param client: Instance du client Gemini.
+    :param question_utilisateur: La question normalisée posée par l'utilisateur.
+    :param contexte_recupere: Le texte de contexte pertinent extrait du Vector Store.
+    :return: La réponse synthétisée par le LLM.
+    """
+    
+    # 1. Construction du Prompt Augmenté (le prompt principal injectant les données)
+    prompt_complet = f"""
+    CONTEXTE FACTUEL :
+    ---
+    {contexte_recupere}
+    ---
+    
+    QUESTION DE L'UTILISATEUR :
+    {question_utilisateur}
+    
+    Répondez à la question en utilisant le CONTEXTE FACTUEL ci-dessus et en respectant les instructions.
+    """
+
+    # 2. Configuration et Appel à l'API Gemini
+    try:
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt_complet,
+            config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_INSTRUCTION_RAG,
+                # Basse température pour une réponse factuelle et peu créative
+                temperature=0.1 
+            )
+        )
+        return response.text
+    except Exception as e:
+        st.error(f"Erreur lors de la génération de la réponse finale par Gemini : {e}")
+        return "Une erreur interne est survenue lors de la tentative de génération de la réponse."
